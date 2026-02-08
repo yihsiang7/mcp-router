@@ -1,0 +1,60 @@
+name: Sync Upstream
+
+on:
+  # 每天 UTC 00:00 自動執行（台灣時間早上 8:00）
+  schedule:
+    - cron: '0 0 * * *'
+  # 允許手動觸發
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Sync with upstream
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/mcp-router/mcp-router.git || true
+          git fetch upstream
+
+      - name: Merge upstream changes
+        id: merge
+        run: |
+          git merge upstream/main --no-edit || echo "CONFLICT=true" >> $GITHUB_OUTPUT
+
+      - name: Push changes
+        if: steps.merge.outputs.CONFLICT != 'true'
+        run: |
+          git push origin main
+
+      - name: Trigger Intel build
+        if: steps.merge.outputs.CONFLICT != 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: upstream-synced
+
+      - name: Create issue on conflict
+        if: steps.merge.outputs.CONFLICT == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ 上游同步發生衝突',
+              body: '自動同步上游更新時發生合併衝突，需要手動處理。\n\n請執行以下指令解決衝突：\n```bash\ngit fetch upstream\ngit merge upstream/main\n# 解決衝突後\ngit push origin main\n```',
+              labels: ['sync-conflict']
+            })

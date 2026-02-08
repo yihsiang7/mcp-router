@@ -15,10 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            label: macOS
+          - os: macos-13
+            label: macOS-Intel
+            arch: x64
           - os: windows-latest
             label: Windows
+            arch: default
     env:
       CI: true
 
@@ -40,7 +42,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run make
+      - name: Run make (Intel x64)
+        if: matrix.arch == 'x64'
+        working-directory: apps/electron
+        run: pnpm run make:x64
+
+      - name: Run make (Default)
+        if: matrix.arch == 'default'
         run: pnpm run make
 
       - name: Upload make artifacts

@@ -1,0 +1,61 @@
+name: Build Intel (x64) Version
+
+on:
+  # 當上游同步完成後自動觸發
+  repository_dispatch:
+    types: [upstream-synced]
+  # 允許手動觸發
+  workflow_dispatch:
+  # 當 main 分支有推送時觸發
+  push:
+    branches:
+      - main
+
+jobs:
+  build-intel:
+    name: Build macOS Intel (x64)
+    runs-on: macos-13  # 使用 Intel runner
+    env:
+      CI: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Intel (x64) version
+        run: |
+          cd apps/electron
+          pnpm run make:x64
+
+      - name: Upload Intel build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCP-Router-macOS-Intel-x64
+          path: apps/electron/out/make
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create release info
+        run: |
+          echo "✅ Intel (x64) 版本建置完成！" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 下載位置：" >> $GITHUB_STEP_SUMMARY
+          echo "前往 Actions 頁面的 Artifacts 區域下載安裝檔" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔧 架構資訊：" >> $GITHUB_STEP_SUMMARY
+          echo "- 目標架構：x64 (Intel)" >> $GITHUB_STEP_SUMMARY
+          echo "- 平台：macOS" >> $GITHUB_STEP_SUMMARY
