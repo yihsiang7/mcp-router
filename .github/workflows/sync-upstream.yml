@@ -1,9 +1,9 @@
 name: Sync Upstream
 
 on:
-  # 每天 UTC 00:00 自動執行（台灣時間早上 8:00）
+  # 每月 1 日 UTC 00:00 自動執行（台灣時間早上 8:00）
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 1 * *'
   # 允許手動觸發
   workflow_dispatch:
 
