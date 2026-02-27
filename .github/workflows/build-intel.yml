@@ -14,7 +14,7 @@ on:
 jobs:
   build-intel:
     name: Build macOS Intel (x64)
-    runs-on: macos-13  # 使用 Intel runner
+    runs-on: macos-latest  # 使用 Apple Silicon runner 進行交叉編譯
     env:
       CI: true
 
@@ -35,6 +35,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Rebuild native modules for x64
+        run: |
+          cd apps/electron
+          pnpm rebuild:x64
 
       - name: Build Intel (x64) version
         run: |
