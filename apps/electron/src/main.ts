@@ -360,8 +360,14 @@ async function initApplication(): Promise<void> {
     );
   }
 
-  const loginItemState = app.getLoginItemSettings();
-  const launchedAtLogin = loginItemState.wasOpenedAtLogin ?? false;
+  let launchedAtLogin = false;
+  try {
+    const loginItemState = app.getLoginItemSettings();
+    launchedAtLogin = loginItemState.wasOpenedAtLogin ?? false;
+  } catch {
+    // app.getLoginItemSettings() requires a code signature on macOS.
+    // Fall back to false for unsigned / development builds.
+  }
   const launchedWithHiddenFlag = process.argv.some((arg) =>
     ["--hidden", "--minimized"].includes(arg),
   );
